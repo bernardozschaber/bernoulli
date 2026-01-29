@@ -2,15 +2,17 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
-// Configurações do banco de dados
-$host = 'localhost';
-$dbname = 'inventario_estoque';
-$username = 'inventario';  // Altere se necessário
-$password = 'raja';      // Altere se você configurou senha
+// Configurações do banco de dados usando variáveis de ambiente
+$host = getenv('DB_HOST') ?: 'localhost';
+$port = getenv('DB_PORT') ?: '3306';
+$dbname = getenv('DB_NAME') ?: 'inventario_estoque';
+$username = getenv('DB_USER') ?: 'root';
+$password = getenv('DB_PASSWORD') ?: '';
 
 try {
     // Conectar ao banco de dados
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
+    $pdo = new PDO($dsn, $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
     // Buscar todos os itens
@@ -65,7 +67,13 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => 'Erro ao conectar ao banco de dados: ' . $e->getMessage()
+        'error' => 'Erro ao conectar ao banco de dados: ' . $e->getMessage(),
+        'debug' => [
+            'host' => $host,
+            'port' => $port,
+            'database' => $dbname,
+            'user' => $username
+        ]
     ], JSON_UNESCAPED_UNICODE);
 }
 ?>
