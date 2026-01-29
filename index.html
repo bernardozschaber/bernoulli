@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Estoque - MKT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0693e3 0%, #00d084 50%, #7bdcb5 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .logo {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            height: 50px;
+        }
+
+        h1 {
+            color: #00d084;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: #e8f9f3;
+            padding: 15px 30px;
+            border-radius: 10px;
+            border-left: 4px solid #00d084;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #00d084;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .search-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #00d084;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid #00d084;
+            background: white;
+            color: #00d084;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: #00d084;
+            color: white;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .item-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .item-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 3em;
+        }
+
+        .item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .item-details {
+            padding: 20px;
+        }
+
+        .item-id {
+            color: #999;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+
+        .item-name {
+            color: #333;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            min-height: 50px;
+        }
+
+        .item-quantity {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .quantity-badge {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .stock-high { background: #d4edda; color: #155724; }
+        .stock-medium { background: #fff3cd; color: #856404; }
+        .stock-low { background: #f8d7da; color: #721c24; }
+        .stock-none { background: #e2e3e5; color: #383d41; }
+
+        .item-dates {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .item-dates div {
+            margin-bottom: 5px;
+        }
+
+        .no-results {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+            font-size: 1.3em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+            font-size: 1.5em;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .inventory-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .logo {
+                position: static;
+                display: block;
+                margin: 0 auto 20px;
+                height: 40px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="https://www.bernoulli.com.br/app/themes/bernoulli/assets/static/img/logo-education.svg" alt="Bernoulli Educação" class="logo">
+            <h1>📦 Controle de Estoque - Marketing</h1>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-label">Total de Itens</div>
+                    <div class="stat-value" id="totalItems">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Total de Unidades</div>
+                    <div class="stat-value" id="totalUnits">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Estoque Baixo</div>
+                    <div class="stat-value" id="lowStock">-</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="search-bar">
+            <input 
+                type="text" 
+                class="search-input" 
+                id="searchInput" 
+                placeholder="🔍 Buscar item por nome..."
+            >
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">Todos</button>
+                <button class="filter-btn" data-filter="low">Estoque Baixo (&lt;10)</button>
+                <button class="filter-btn" data-filter="medium">Estoque Médio (10-50)</button>
+                <button class="filter-btn" data-filter="high">Estoque Alto (&gt;50)</button>
+                <button class="filter-btn" data-filter="none">Sem Estoque</button>
+            </div>
+        </div>
+
+        <div class="inventory-grid" id="inventoryGrid">
+            <div class="loading">⏳ Carregando inventário...</div>
+        </div>
+    </div>
+
+    <script>
+        let allItems = [];
+        let currentFilter = 'all';
+
+        // Carregar dados do inventário
+        async function loadInventory() {
+            try {
+                const response = await fetch('api.php');
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar dados');
+                }
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                allItems = data.items;
+                updateStats(data.stats);
+                displayItems(allItems);
+            } catch (error) {
+                document.getElementById('inventoryGrid').innerHTML = `
+                    <div class="error">
+                        <strong>Erro ao carregar inventário:</strong><br>
+                        ${error.message}<br><br>
+                        Verifique se o arquivo api.php está configurado corretamente e se o servidor web está rodando.
+                    </div>
+                `;
+            }
+        }
+
+        // Atualizar estatísticas
+        function updateStats(stats) {
+            document.getElementById('totalItems').textContent = stats.total_items;
+            document.getElementById('totalUnits').textContent = stats.total_units.toLocaleString('pt-BR');
+            document.getElementById('lowStock').textContent = stats.low_stock;
+        }
+
+        // Exibir itens
+        function displayItems(items) {
+            const grid = document.getElementById('inventoryGrid');
+            
+            if (items.length === 0) {
+                grid.innerHTML = '<div class="no-results">😕 Nenhum item encontrado</div>';
+                return;
+            }
+
+            grid.innerHTML = items.map(item => {
+                const stockClass = getStockClass(item.quantidade);
+                const stockText = getStockText(item.quantidade);
+                const imageUrl = item.foto_caminho || '';
+                const hasImage = imageUrl && imageUrl.trim() !== '';
+                
+                return `
+                    <div class="item-card">
+                        <div class="item-image">
+                            ${hasImage 
+                                ? `<img src="${imageUrl}" alt="${item.nome_item}" onerror="this.parentElement.innerHTML='📦'">` 
+                                : '📦'
+                            }
+                        </div>
+                        <div class="item-details">
+                            <div class="item-id">ID: ${item.id}</div>
+                            <div class="item-name">${item.nome_item}</div>
+                            <div class="item-quantity">
+                                <span class="quantity-badge ${stockClass}">
+                                    ${item.quantidade} ${item.quantidade === 1 ? 'unidade' : 'unidades'}
+                                </span>
+                            </div>
+                            <div class="item-dates">
+                                <div>📅 Cadastro: ${formatDate(item.data_cadastro)}</div>
+                                <div>🔄 Atualização: ${formatDate(item.data_atualizacao)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Determinar classe de estoque
+        function getStockClass(quantidade) {
+            if (quantidade === 0) return 'stock-none';
+            if (quantidade < 10) return 'stock-low';
+            if (quantidade < 50) return 'stock-medium';
+            return 'stock-high';
+        }
+
+        // Determinar texto de estoque
+        function getStockText(quantidade) {
+            if (quantidade === 0) return 'SEM ESTOQUE';
+            if (quantidade < 10) return 'ESTOQUE BAIXO';
+            if (quantidade < 50) return 'ESTOQUE MÉDIO';
+            return 'ESTOQUE BOM';
+        }
+
+        // Formatar data
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Buscar itens
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = allItems.filter(item => 
+                item.nome_item.toLowerCase().includes(searchTerm)
+            );
+            displayItems(applyFilter(filtered));
+        });
+
+        // Filtros
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentFilter = e.target.dataset.filter;
+                
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+                const filtered = allItems.filter(item => 
+                    item.nome_item.toLowerCase().includes(searchTerm)
+                );
+                displayItems(applyFilter(filtered));
+            });
+        });
+
+        // Aplicar filtro
+        function applyFilter(items) {
+            if (currentFilter === 'all') return items;
+            
+            return items.filter(item => {
+                const qty = item.quantidade;
+                switch(currentFilter) {
+                    case 'none': return qty === 0;
+                    case 'low': return qty > 0 && qty < 10;
+                    case 'medium': return qty >= 10 && qty <= 50;
+                    case 'high': return qty > 50;
+                    default: return true;
+                }
+            });
+        }
+
+        // Carregar ao iniciar
+        loadInventory();
+    </script>
+</body>
+</html>
