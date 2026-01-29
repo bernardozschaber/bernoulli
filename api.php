@@ -6,8 +6,8 @@ header('Access-Control-Allow-Origin: *');
 $host = getenv('DB_HOST') ?: 'localhost';
 $port = getenv('DB_PORT') ?: '3306';
 $dbname = getenv('DB_NAME') ?: 'inventario_estoque';
-$username = getenv('DB_USER') ?: 'root';
-$password = getenv('DB_PASSWORD') ?: '';
+$username = getenv('DB_USER') ?: 'inventario';
+$password = getenv('DB_PASSWORD') ?: 'raja';
 
 try {
     // Conectar ao banco de dados
