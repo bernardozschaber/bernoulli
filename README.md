@@ -1,174 +1,143 @@
-# Guia de Instalação e Uso - Sistema de Inventário MySQL
+# 📦 Sistema de Inventário Bernoulli
 
-## 📋 Pré-requisitos
+Sistema web para controle de estoque com interface visual.
 
-1. **MySQL instalado** no seu computador
-   - Baixar em: https://dev.mysql.com/downloads/mysql/
-   - Ou usar XAMPP/WAMP que já incluem MySQL
+---
 
-2. **Cliente MySQL** para executar os comandos:
-   - MySQL Workbench (recomendado, interface gráfica)
-   - phpMyAdmin (se usar XAMPP/WAMP)
-   - Linha de comando MySQL
+## 🚀 Instalação
 
-## 🚀 Passo a Passo para Iniciar
-
-### Passo 1: Criar o Banco de Dados
-
-1. Abra seu cliente MySQL (Workbench, phpMyAdmin ou terminal)
-2. Execute o arquivo `criar_banco_inventario.sql`
-3. Isso vai:
-   - Criar o banco de dados `inventario_estoque`
-   - Criar a tabela `inventario`
-   - Inserir 4 itens de exemplo para teste
-
-**No MySQL Workbench:**
-- File → Open SQL Script → selecione `criar_banco_inventario.sql`
-- Clique no ícone de raio ⚡ para executar
-
-**Na linha de comando:**
+### 1. Executar setup
 ```bash
-mysql -u root -p < criar_banco_inventario.sql
+sudo mariadb < setup_completo.sql
 ```
 
-### Passo 2: Organizar as Fotos
-
-Crie uma estrutura de pastas para suas fotos:
-
-```
-meu_projeto/
-├── fotos/
-│   ├── caneta_azul.jpg
-│   ├── caderno_100fls.jpg
-│   └── ...
-└── banco_de_dados/
-    ├── criar_banco_inventario.sql
-    └── consultas_uteis.sql
+### 2. Iniciar servidor
+```bash
+cd /home/brnrdzschbr/Debian/Bernoulli
+php -S localhost:8000
 ```
 
-**Importante:** O caminho que você coloca no banco (`foto_caminho`) deve corresponder 
-à localização real do arquivo no seu sistema.
+### 3. Acessar
+```
+http://localhost:8000
+```
 
-### Passo 3: Usar o Sistema
+---
 
-Use o arquivo `consultas_uteis.sql` como referência para:
-- Inserir novos itens
-- Atualizar quantidades
-- Buscar itens
-- Gerar relatórios
+## 📊 Consultas SQL Úteis
 
-## 📝 Operações Comuns
+### Ver todos os itens
+```sql
+SELECT id, nome_item, quantidade, foto_caminho, data_cadastro 
+FROM inventario 
+ORDER BY nome_item;
+```
 
-### Adicionar um novo item ao inventário
-
+### Inserir novo item
 ```sql
 INSERT INTO inventario (foto_caminho, nome_item, quantidade) 
-VALUES ('fotos/meu_produto.jpg', 'Meu Produto', 15);
+VALUES ('fotos/novo_item.png', 'Nome do Item', 10);
 ```
 
-### Atualizar quantidade (entrada de mercadoria)
-
+### Atualizar quantidade
 ```sql
--- Adicionar 10 unidades ao item ID 1
 UPDATE inventario 
-SET quantidade = quantidade + 10 
+SET quantidade = 45 
 WHERE id = 1;
 ```
 
-### Atualizar quantidade (saída de mercadoria)
-
+### Entrada de estoque (adicionar)
 ```sql
--- Remover 5 unidades do item ID 1
+UPDATE inventario 
+SET quantidade = quantidade + 20 
+WHERE id = 1;
+```
+
+### Saída de estoque (remover)
+```sql
 UPDATE inventario 
 SET quantidade = quantidade - 5 
 WHERE id = 1;
 ```
 
-### Ver itens com estoque baixo
-
+### Ver estoque baixo
 ```sql
 SELECT * FROM inventario 
-WHERE quantidade < 10;
+WHERE quantidade < 10 
+ORDER BY quantidade ASC;
 ```
 
-## 🔍 Conectar com Aplicações
-
-Se você quiser criar uma interface web ou desktop, aqui estão exemplos de conexão:
-
-### PHP
-```php
-<?php
-$servername = "localhost";
-$username = "root";
-$password = "sua_senha";
-$dbname = "inventario_estoque";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die("Conexão falhou: " . $conn->connect_error);
-}
-
-$sql = "SELECT * FROM inventario";
-$result = $conn->query($sql);
-
-while($row = $result->fetch_assoc()) {
-    echo "Item: " . $row["nome_item"] . " - Qtd: " . $row["quantidade"];
-}
-?>
+### Buscar por nome
+```sql
+SELECT * FROM inventario 
+WHERE nome_item LIKE '%caneta%';
 ```
 
-### Python
-```python
-import mysql.connector
-
-conn = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="sua_senha",
-    database="inventario_estoque"
-)
-
-cursor = conn.cursor()
-cursor.execute("SELECT * FROM inventario")
-
-for (id, foto, nome, qtd, data_cad, data_atl) in cursor:
-    print(f"{nome}: {qtd} unidades")
-
-conn.close()
+### Deletar item
+```sql
+DELETE FROM inventario 
+WHERE id = 10;
 ```
 
-## 🛡️ Segurança e Backup
+### Relatório com status
+```sql
+SELECT 
+    id,
+    nome_item,
+    quantidade,
+    CASE 
+        WHEN quantidade = 0 THEN 'SEM ESTOQUE'
+        WHEN quantidade < 10 THEN 'ESTOQUE BAIXO'
+        WHEN quantidade < 50 THEN 'ESTOQUE NORMAL'
+        ELSE 'ESTOQUE BOM'
+    END as status_estoque,
+    data_atualizacao
+FROM inventario
+ORDER BY quantidade ASC;
+```
 
-### Fazer backup do banco
+### Totais
+```sql
+-- Total de itens
+SELECT COUNT(*) as total_itens FROM inventario;
+
+-- Total de unidades
+SELECT SUM(quantidade) as total_unidades FROM inventario;
+```
+
+---
+
+## 🔧 Estrutura
+
+```
+/home/brnrdzschbr/Debian/Bernoulli/
+├── fotos/              # Imagens dos produtos (.png)
+├── index.html          # Interface web
+├── api.php             # API backend
+└── setup_completo.sql  # Instalação do banco
+```
+
+---
+
+## 💾 Backup
 
 ```bash
-mysqldump -u root -p inventario_estoque > backup_inventario.sql
+# Fazer backup
+mysqldump -u inventario -p inventario_estoque > backup_$(date +%Y%m%d).sql
+
+# Restaurar backup
+mysql -u inventario -p inventario_estoque < backup_20260128.sql
 ```
 
-### Restaurar backup
+---
+
+## 📝 Acessar o banco
 
 ```bash
-mysql -u root -p inventario_estoque < backup_inventario.sql
+sudo mariadb
 ```
 
-## 💡 Dicas
-
-1. **Nomear fotos de forma consistente**: use nomes sem espaços e caracteres especiais
-2. **Fazer backup regularmente**: especialmente antes de grandes mudanças
-3. **Usar IDs para referências**: nunca use o nome do item como chave, sempre use o ID
-4. **Validar caminhos de fotos**: certifique-se que os arquivos existem antes de inserir
-
-## ❓ Problemas Comuns
-
-**Erro: "Access denied for user"**
-- Verifique usuário e senha do MySQL
-- Use `root` como usuário padrão (em desenvolvimento)
-
-**Erro: "Table doesn't exist"**
-- Execute primeiro o arquivo `criar_banco_inventario.sql`
-- Certifique-se de estar usando o banco correto: `USE inventario_estoque;`
-
-**Fotos não aparecem**
-- Verifique se o caminho no banco está correto
-- Verifique se o arquivo realmente existe na pasta
+```sql
+USE inventario_estoque;
+SELECT * FROM inventario;
+```
