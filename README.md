@@ -13,7 +13,7 @@ sudo mariadb < setup_completo.sql
 
 ### 2. Iniciar servidor
 ```bash
-cd /home/brnrdzschbr/Debian/Bernoulli
+cd ~/Bernoulli
 php -S localhost:8000
 ```
 
